@@ -23,6 +23,11 @@ const RegisterAndLoginForm = () => {
     return (
         <div className='bg-blue-50 h-screen flex items-center'>
             <form className='w-64 mx-auto mb-12' onSubmit={handleSubmit}>
+                <div className='flex justify-center'>
+                    <h2 className='text-xl'>
+                        {isLoginOrRegister === 'register' ? 'Register' : 'Login'}
+                    </h2>
+                </div>
                 <input
                     type='text'
                     placeholder='username'
