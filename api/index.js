@@ -4,6 +4,7 @@ import { connect } from 'mongoose';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { WebSocketServer } from 'ws';
 import { UserModel } from './models/User.js';
 import cors from 'cors';
 
@@ -76,4 +77,34 @@ app.post('/register', async (req, res) => {
     }
 });
 
-app.listen(4040);
+const server = app.listen(4040);
+
+const wss = new WebSocketServer({ server });
+
+wss.on('connection', (connection, req) => {
+    const cookies = req.headers.cookie;
+    if (cookies) {
+        const tokenCookieString = cookies.split(';').find(str => str.startsWith('token='));
+
+        if (tokenCookieString) {
+            const token = tokenCookieString.split('=')[1];
+            if (token) {
+                jwt.verify(token, jwtSecret, {}, (err, res) => {
+                    if (err) throw err;
+
+                    const { id, username } = res;
+
+                    connection.id = id;
+                    connection.username = username;
+                });
+            }
+        }
+    }
+    [...wss.clients].forEach(client => {
+        client.send(
+            JSON.stringify({
+                online: [...wss.clients].map(c => ({ id: c.id, username: c.username })),
+            })
+        );
+    });
+});
